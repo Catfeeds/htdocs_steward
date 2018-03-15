@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Http\Controllers\Api\Analyse;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+
+use App\Services\Analyse\BusinessService;
+
+
+class BusinessController extends Controller
+{
+
+    //营业分析接口
+    public function sell(Request $request)
+    {
+
+        $sell_service = new BusinessService();
+        $sell_result = $sell_service->business($request->input());
+        return response()->json(['code'=>200, 'data'=>$sell_result]);
+
+    }
+
+
+}

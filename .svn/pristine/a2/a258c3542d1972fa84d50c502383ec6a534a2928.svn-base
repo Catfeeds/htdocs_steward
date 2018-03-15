@@ -1,0 +1,212 @@
+<?php
+namespace App\Http\Controllers\Admin\Task;
+
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Task\TaskManageController;
+use DB;
+use Illuminate\Support\Facades\Redis as Redis;
+
+class StatSettleController extends Controller
+{
+
+    public function stat(Request $request)
+    {
+
+        if (empty($request->input('task_log_id'))) {
+            die('参数错误');
+        }
+
+        $TaskManageController = new TaskManageController();
+
+        $calDate = date('Y-m-d', strtotime('-1 day'));
+        $s_time = $calDate . ' 00:00:00';
+        $e_time = $calDate . ' 23:59:59';
+
+        ini_set('memory_limit', '2048M');
+
+        set_time_limit(0);
+
+        //获取统计日期数据
+        $this->get_settle_data();
+
+        //获取完成订单数据
+        $this->get_finish();
+
+        //保存门店结算统计数据
+        $this->st_stat_mall_settle_accounts();
+
+        //删除Redis
+        $redis_del = Redis::keys('StatSettleController_*');
+        if ( $redis_del ) {
+            foreach ( $redis_del as $del ) {
+                Redis::del($del);
+            }
+        }
+
+        ini_restore('memory_limit');
+
+        $TaskManageController->updateTaskLog( $request->input('task_log_id'), 'SUCCESS' );
+    }
+
+    public function get_settle_data() {
+
+        //分页
+        $take = 1;
+        global $s_time;
+        global $e_time;
+
+        while ($take >= 1) {
+
+            $settle = DB::table('st_order')
+                ->select(DB::raw('DATE_FORMAT(created_at,\'%Y-%m-%d\') AS days, app_id, mall_id'))
+                ->whereBetween('created_at', [$s_time, $e_time])
+                ->offset(($take-1)*5000)
+                ->limit(5000)
+                ->get();
+
+            if (empty($settle)) {
+                break;
+            }
+
+            foreach ( $settle as $d ) {
+
+                $check = DB::table('st_stat_mall_settle_accounts')
+                    ->where([
+                        ['cal_date', $d->days],
+                        ['mall_id', $d->mall_id],
+                        ['app_id', $d->app_id]
+                    ])->get();
+
+                if ( empty($check) ) {
+
+                    DB::table('st_stat_mall_settle_accounts')->insert([
+                        'updated_at' => Carbon::now(),
+                        'creator' => 'system',
+                        'created_at' => Carbon::now(),
+                        'cal_date' => $d->days,
+                        'mall_id' => $d->mall_id,
+                        'app_id' => $d->app_id,
+                        'toal_goods_money' => 0,
+                        'toal_mall_discount_money' => 0,
+                        'toal_app_discount_money' => 0,
+                        'total_income' => 0,
+                        'total_return_money' => 0,
+                        'total_package_money' => 0
+                    ]);
+
+                }
+
+            }
+
+            ++$take;
+
+        }
+
+    }
+
+    public function get_finish() {
+
+        //分页
+        $page = 1;
+        global $s_time;
+        global $e_time;
+
+        while ( $page>=1 ) {
+
+            $orders = DB::table('st_order_trace')
+                ->select('order_id')
+                ->where('order_status', 4)
+                ->whereBetween('created_at', [$s_time, $e_time])
+                ->offset(($page-1)*5000)
+                ->limit(5000)
+                ->get();
+
+            if ( $orders ) {
+                break;
+            }
+
+            foreach ( $orders as $d ) {
+
+                $settle_data = DB::table('st_order')
+                ->select(DB::raw('DATE_FORMAT(created_at,\'%Y-%m-%d\') AS days, app_id, mall_id, total_fee, mall_act_fee, app_act_fee, mall_fee, package_fee'))
+                ->where('id', $d['order_id'])->get();
+
+                if (empty($settle_data)) {
+                    continue;
+                }
+
+                $redis_index = 'StatSettleController_'.$settle_data[0]['days'] . '_' . $settle_data[0]['mall_id'] . '_' . $settle_data[0]['app_id'];
+                $redis_data = Redis::get($redis_index);
+
+                if ( empty($redis_data) ) {
+                    $redis_data = array(
+                        'toal_goods_money' => 0,
+                        'toal_mall_discount_money' => 0,
+                        'toal_app_discount_money' => 0,
+                        'total_income' => 0,
+                        'total_return_money' => 0,
+                        'total_package_money' => 0
+                    );
+                } else {
+                    $redis_data = json_decode($redis_data,true);
+                }
+
+                $redis_data['toal_goods_money'] += $settle_data[0]->total_fee;
+                $redis_data['toal_mall_discount_money'] += $settle_data[0]->mall_act_fee;
+                $redis_data['toal_app_discount_money'] += $settle_data[0]->app_act_fee;
+                $redis_data['total_income'] += $settle_data[0]->mall_fee;
+                $redis_data['total_package_money'] += $settle_data[0]->package_fee;
+
+                Redis::set($redis_index,json_encode($redis_data));
+
+            }
+
+            ++$page;
+
+        }
+
+    }
+
+    public function st_stat_mall_settle_accounts() {
+
+        $redis_array = Redis::keys('StatSettleController_*');
+
+        if ( $redis_array ) {
+            foreach ( $redis_array as $r ) {
+
+                $data = Redis::get($r);
+                $data = json_decode($data,true);
+
+                $r = str_replace('StatSettleController_','',$r);
+                $index = explode('_',$r);
+
+                $check = DB::table('st_stat_mall_settle_accounts')
+                    ->where([
+                        ['cal_date', $index[0]],
+                        ['mall_id', $index[1]],
+                        ['app_id', $index[2]]
+                    ])->get();
+
+                DB::table('st_stat_mall_settle_accounts')
+                    ->where([
+                        ['cal_date', $index[0]],
+                        ['mall_id', $index[1]],
+                        ['app_id', $index[2]]
+                    ])->update([
+                        'toal_goods_money' => $check[0]->toal_goods_money + $data['toal_goods_money'],
+                        'toal_mall_discount_money' => $check[0]->toal_mall_discount_money + $data['toal_mall_discount_money'],
+                        'toal_app_discount_money' => $check[0]->toal_app_discount_money + $data['toal_app_discount_money'],
+                        'total_income' => $check[0]->total_income + $data['total_income'],
+                        'total_return_money' => $check[0]->total_return_money + $data['total_return_money'],
+                        'total_package_money' => $check[0]->total_package_money + $data['total_package_money']
+                    ]);
+
+            }
+        }
+
+    }
+
+}
+

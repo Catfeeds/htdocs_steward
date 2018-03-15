@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Http\Controllers\Receive\Functions;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+
+
+class ExportController extends Controller
+{
+
+
+    public function index(Request $request)
+    {
+
+        $request_data = $request -> all();
+        error_log('huidiaocanshu');
+        error_log(var_export($request_data , true));
+        $req_id = $request -> input('req_id','');
+        $file_url = $request -> input('file_url','');
+        $err_msg = $request -> input('err_msg','');
+
+    }
+
+
+}

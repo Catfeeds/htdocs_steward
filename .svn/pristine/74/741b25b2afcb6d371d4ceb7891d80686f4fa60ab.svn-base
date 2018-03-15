@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Services\User;
+
+use App\Models\User\StUser;
+use Illuminate\Support\Facades\DB;
+
+class SearchService
+{
+
+
+    /**
+     * 用户列表搜索
+     * @param $args
+     * @return mixed
+     */
+    public function search($where,$rp,$offset,$sort,$order) {
+
+        $user_data=StUser::where($where)
+            ->orderBy($sort, $order)
+            ->offset($offset)->limit($rp)
+            ->get()
+            ->toArray();
+
+        $return_data = [];
+//         print_r($user_data);die();
+        if($user_data){
+            $total = count($user_data);
+            foreach($user_data as $user){
+                $type = $user['type'] == 2 ? '绑定门店' : '';
+                $return_data[] = array(
+                    'operation' => '<a href="javascript:void(0)" class="edit"  data_id="' . $user['id'] . '">修改</a>&nbsp;&nbsp;
+                                <a href="javascript:void(0)" class="mall_type" data_type="' . $user['status'] . '"  data_id="' . $user['id'] . '">' . $type . '</a>',
+                    'mobile' => $user['mobile'],
+                    'name' => $user['creator'],
+                    'type' => $user['type'],
+                    'mall' => $user['name'],
+                    'created_at' => $user['created_at'],
+                    'update_at' => $user['updated_at'],
+                    'editor' => $user['editor'],
+                    'status' => $user['status']
+                );
+            }
+            $result_data = [
+                'total' => $total,
+                'rows' => $return_data
+            ];
+//            print_r($result_data);die();
+            return $result_data;
+        }
+
+    }
+
+
+}

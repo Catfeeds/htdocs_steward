@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Services\Analyse;
+
+
+
+class GoodsService
+{
+
+
+    /**
+     * 商品分析
+     * @param $args = [
+     *      'mall_id' => int 门店ID
+     *      'app_id' => int 应用ID
+     *      'goods_name' => string 商品名称(模糊匹配)
+     *      'start_date' => string 开始日期
+     *      'end_date' => string 结束日期
+     * ]
+     * @return array = [
+     *      'code' => string 商家编码/条形码
+     *      'goods_name' => string 商品名称
+     *      'sales_number' => int 销量
+     *      'sales_fee' => string 销售额
+     *      'unit_price' => string 均单价
+     * ]
+     */
+    public function goods($args)
+    {
+
+        $return_result = [];
+        return $return_result;
+
+    }
+
+
+    /**
+     * 商品类别分析
+     * @param $args = [
+     *      'mall_id' => int 门店ID
+     *      'app_id' => int 应用ID
+     *      'goods_name' => string 商品名称(模糊匹配)
+     *      'start_date' => string 开始日期
+     *      'end_date' => string 结束日期
+     * ]
+     * @return array
+     */
+    public function category($args)
+    {
+
+        $return_result = [];
+        return $return_result;
+
+    }
+
+
+}

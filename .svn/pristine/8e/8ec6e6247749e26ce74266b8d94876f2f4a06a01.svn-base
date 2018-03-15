@@ -1,0 +1,126 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Redis as Redis;
+
+use App\Models\User\StUser;
+use App\Models\Mall\StMall;
+
+
+class IndexController extends Controller
+{
+
+    //主框架
+    public function main(Request $request)
+    {
+
+        $menus = [
+            [
+                'icon' => '/images/admin/icon/index.png',
+                'name' => '首页',
+                'sub' => [
+                    [
+                        'name' => '首页',
+                        'link' => '/admin/index'
+                    ]
+                ]
+            ],
+            [
+                'icon' => '/images/admin/icon/order.png',
+                'name' => '订单中心',
+                'sub' => [
+                    [
+                        'name' => '订单助手',
+                        'link' => '/admin/order/list/1'
+                    ],
+                    [
+                        'name' => '订单查询',
+                        'link' => '/admin/order/list/2'
+                    ]
+                ],
+                'permission' => '1,2'
+            ]
+        ];
+
+        $user_id = Redis::get('ST_USER_ID_' . session_id());
+        $st_user = StUser::find($user_id);
+
+        $return_data = [
+            'left_menus' => $menus,
+            'user_name' => $st_user->name,
+            'domain_name' => $request->getSchemeAndHttpHost(),
+            'pc_client' => 0
+        ];
+
+        $permission = [$st_user->type];
+        foreach($menus as $key=>$m) {
+            if (isset($m['permission']) && !array_intersect(explode(',', $m['permission']), $permission)) {
+                unset($return_data['left_menus'][$key]);
+                continue;
+            }
+            if (isset($m['sub']) && !empty($m['sub'])) {
+                foreach($m['sub'] as $k=>$sub) {
+                    if (isset($sub['permission']) && !array_intersect(explode(',', $sub['permission']), $permission))
+                        unset($return_data['left_menus'][$key]['sub'][$k]);
+                }
+            }
+        }
+
+        if ($st_user->type == 2) {
+            $st_mall = StMall::where('status', 1)->get();
+            if ($st_mall->count() > 0) {
+                foreach($st_mall as $mall) {
+                    $return_data['mall'][] = [
+                        'mall_id' => $mall->id,
+                        'mall_name' => $mall->name,
+                        'mall_code' => $mall->code
+                    ];
+                }
+            }
+        }
+
+        return view('admin/main', $return_data);
+
+    }
+
+    //首页页面
+    public function index()
+    {
+
+        $user_id = Redis::get('ST_USER_ID_' . session_id());
+        $st_user = StUser::find($user_id);
+
+        $data = [
+            'user_id' => $st_user->id,
+            'user_name' => $st_user->name
+        ];
+
+        if ($st_user->type == 1) {
+            return $this->home($data);
+        } else if ($st_user->type == 2) {
+            $data['mall_id'] = $st_user->mall_id;
+            return $this->mall($data);
+        }
+
+    }
+
+
+    //总账号首页
+    private function home($data) {
+
+        return view('admin/index/home', []);
+
+    }
+
+    //门店账号首页
+    private function mall($data) {
+
+        return view('admin/index/mall', []);
+
+    }
+
+
+}

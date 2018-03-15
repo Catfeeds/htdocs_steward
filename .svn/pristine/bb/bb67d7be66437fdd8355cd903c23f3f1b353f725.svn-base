@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Http\Controllers\Admin\User;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Models\User\StUser;
+use App\Services\User\SearchService;
+
+
+class UserController extends Controller
+{
+
+
+    //用户列表业
+    public function index(Request $request)
+    {
+
+        return view('admin/user/index');
+
+    }
+
+
+    //用户列表查询
+    public function search(Request $request) {
+
+        $rp = $request->input('rp', 10);
+        $offset = $request->input('offset', 0);
+        $sort=$request->input('sort');
+        $order=$request->input('order');
+        $where = [];
+        //用户名称
+        if ($request->input('mobile')) {
+            $where[] = ['mobile', $request->input('mobile')];
+        }
+//        print_r($where);die();
+        $User=new SearchService();
+        $Userdata=$User->search($where,$rp,$offset,$sort,$order);
+        print_r($Userdata);die();
+        return response()->json(['code'=>200, 'message'=>'ok', 'data'=>$Userdata]);
+
+    }
+
+
+    //用户新增页
+    public function add()
+    {
+
+        return view('admin/user/edit');
+
+    }
+
+
+    //用户编辑页
+    public function edit($id) {
+
+        return view('admin/user/edit');
+
+    }
+
+
+    //提交用户信息
+    public function submit(Request $request)
+    {
+
+        return response()->json(['code'=>200, 'message'=>'ok', 'data'=>[]]);
+
+    }
+
+}

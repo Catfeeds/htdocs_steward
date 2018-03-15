@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Http\Controllers\Task;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+use App\Models\Order\StOrder;
+use Wm;
+
+class OrderController extends Controller
+{
+
+
+    public function push(Request $request)
+    {
+
+        //推送新订单
+        $new_order = [];
+
+        $mall_id_array = [1111, 112];
+
+        $mall_user = StUser::where('status', 1)
+            ->where(function($query) use ($mall_id_array) {
+                $query->whereIn('mall_id', $mall_id_array)
+                    ->orWhere('type', 1);
+            })->get();
+
+
+        if ($mall_user->count() > 0) {
+            Wm::push_message($mall_user, '您有新订单，请注意查收', 1);
+        }
+
+        //推送催单
+        $new_order = [];
+
+        $mall_id_array = [1111, 112];
+
+        $mall_user = StUser::where('status', 1)
+            ->where(function($query) use ($mall_id_array) {
+                $query->whereIn('mall_id', $mall_id_array)
+                    ->orWhere('type', 1);
+            })->get();
+
+
+        if ($mall_user->count() > 0) {
+            Wm::push_message($mall_user, '您有催单啦，请及时处理', 2);
+        }
+
+        //推送退单
+
+    }
+
+
+}

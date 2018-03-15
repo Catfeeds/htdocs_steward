@@ -1,0 +1,465 @@
+<?php
+
+namespace App\Http\Controllers\Api\Order;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+use App\Services\Order\OrderSearchService;
+use App\Services\Order\OrderEditService;
+
+
+class OrderController extends Controller
+{
+
+
+    /**
+     * 订单列表接口
+     * @param Request $request
+     * @return array
+     */
+    public function index(Request $request)
+    {
+
+        $list_type = $request->input('list_type', 0);
+        $app_id = $request->input('app_id', 0);
+        $mall_id = $request->input('mall_id', 0);
+        $page_size = $request->input('page_size', 10);
+        $client = $request->input('client', 0);
+
+        $order_search = new OrderSearchService();
+        $order_result = $order_search->index($list_type, $mall_id, $page_size, $app_id, $client);
+        return response()->json([ 'code'=>200, 'message'=>'ok', 'data'=>$order_result ]);
+
+    }
+
+
+    /**
+     * 订单列表数据查询
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+
+        $order_search = new OrderSearchService();
+        $order_result = $order_search->search($request->input());
+        return response()->json(['code'=>200, 'message'=>'ok', 'data'=>$order_result]);
+
+    }
+
+
+    /**
+     * 订单详情接口
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function detail($id)
+    {
+
+        $order_search = new OrderSearchService();
+        $order_result = $order_search->detail($id);
+        return response()->json($order_result);
+
+    }
+
+
+    /**
+     * 订单接单
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function receive(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->receive($order_id, $user_name);
+        return json_encode($order_result);
+
+    }
+
+
+    /**
+     * 同意申请取消单/退单接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function agreeRefund (Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->agreeRefund($order_id, $user_name);
+        return response()->json($order_result);
+
+    }
+
+
+    /**
+     * 不同意申请接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function disagreeRefund (Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+        $refuse_reason = $request->input('refuse_reason', '');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->disagreeRefund($order_id, $refuse_reason, $user_name);
+        return response()->json($order_result);
+
+    }
+
+
+    /**
+     * 订单发货接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function delivery(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->delivery($order_id, $user_name);
+        return response()->json($order_result);
+
+    }
+
+
+    /**
+     * 订单取消接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cancel(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+        $reason = $request->input('reason', '');
+        $reason_id = $request->input('reason_id', 0);
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->cancel($order_id, $reason_id, $reason, $user_name);
+        return response()->json($order_result);
+
+    }
+
+
+    /**
+     * 订单完成接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function complete(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->complete($order_id, $user_name);
+        return response()->json($order_result);
+
+    }
+
+
+    /**
+     * 回复催单接口
+     * @param $request
+     * @return array
+     */
+    public function replyRemind (Request $request) {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+        $reply_content = $request->input('reply_content', '');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->replyRemind($order_id, $reply_content, $user_name);
+        return response()->json($order_result);
+
+    }
+
+    /**
+     * 挂起订单接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function hangUp(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->hangUp($order_id, $user_name);
+        return response()->json($order_result);
+
+    }
+
+    /**
+     * 订单取消挂起
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cancelHangUp(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->cancelHangUp($order_id, $user_name);
+        return response()->json($order_result);
+
+    }
+
+    /**
+     * 订单配货接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function packs(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->packs($order_id, $user_name);
+        return response()->json($order_result);
+
+    }
+
+    /**
+     * 配货完成接口
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function completePacks(Request $request)
+    {
+
+        $order_id = $request->input('order_id');
+        $user_name = $request->input('user_name');
+
+        $order_edit = new OrderEditService();
+        $order_result = $order_edit->completePacks($order_id, $user_name);
+        return response()->json($order_result);
+
+    }
+
+    /**
+     * 订单提醒
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function notice(Request $request) {
+
+        $mall_id = Redis::get('WDH_STEWARD_MALL_ID_' . session_id());
+        $auto_order_receive = $request->input('auto_order_receive', 0);
+
+        //订单新订单数量计算
+        $new_order = Bill::where(['mallID'=>$mall_id, 'bill_status'=>1, 'order_receive'=>0, 'hang_up'=>0])
+                            ->where('split_type', '<>', 2)
+                            ->where(function($query){
+                                $query->where('pay_type', 1)
+                                    ->orWhere(function($q){
+                                        $q->where('pay_type', 2)
+                                            ->where('pay_status', 1);
+                                    });
+                            })->get();
+
+        if ($auto_order_receive) {
+            $order_id_array = [];
+            foreach($new_order as $order) {
+                $order_id_array[] =app_to_string($order->bill_no);
+                $order->order_receive = 1;
+                $order->save();
+            }
+        }
+
+        //订单催单数量计算
+        $remind_count = Bill::where(['mallID'=>$mall_id, 'hang_up'=>0, 'apply'=>3])
+                            ->where('split_type', '<>', 2)
+                            ->where('bill_status', '<>', 5)
+                            ->where(function($query){
+                                $query->where('pay_type', 1)
+                                    ->orWhere(function($q){
+                                        $q->where('pay_type', 2)
+                                            ->where('pay_status', 1);
+                                    });
+                            })->count();
+
+        //订单退单数量计算
+        $return_count = Bill::where(['mallID'=>$mall_id, 'hang_up'=>0])
+                            ->whereIn('apply', [1, 2])
+                            ->where('split_type', '<>', 2)
+                            ->where(function($query){
+                                $query->where('pay_type', 1)
+                                    ->orWhere(function($q){
+                                        $q->where('pay_type', 2)
+                                            ->where('pay_status', 1);
+                                    });
+                            })->count();
+
+        $result_data = [
+            'new_count' => $new_order->count(),
+            'remind_count' => $remind_count,
+            'return_count' => $return_count,
+            'new_order_id' => isset($order_id_array) ? $order_id_array : []
+        ];
+
+        return response()->json(['code'=>200,'message'=>'ok','data'=>$result_data]);
+
+    }
+
+    /**
+     * 批量获取打印内容
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function  orderFetch(Request $request) {
+
+        $order_id = $request->input('order_id', '');
+        $mall_id = Redis::get('WDH_STEWARD_MALL_ID_' . session_id());
+        $client_id = Redis::get('WDH_CLIENT_ID_' . session_id());
+
+        if (!is_array($order_id)) {
+            $order_id = [$order_id];
+        }
+        $return_data = [];
+        $bill_type = [
+            5 => '百度外卖订单',
+            6 => '美团外卖订单',
+            7 => '饿了么订单',
+            8 => '京东到家订单'
+        ];
+
+        $website_name = ConfigureFunction::getConfigureField(43, 'website_name');
+        $domain_url = ConfigureFunction::getConfigureField(43, 'domain_url');
+
+        $mall_data = MallMaster::find($mall_id);
+        if (!$mall_data) {
+            return response()->json(['code'=>100003, 'message'=>'门店信息没有找到']);
+        }
+
+        $bill_data = Bill::where('mallID', $mall_id)->whereIn('bill_no', $order_id)->get();
+
+        if ($bill_data->count() > 0) {
+
+            foreach($bill_data as $bill) {
+
+                $goods_data = [];
+                $total_weight = 0;
+
+                $bill_goods = BillGoods::getGoods($bill->bill_no);
+                foreach ($bill_goods as $g) {
+                    $goods_data[] = [
+                        'sku_code' => app_to_string($g['product_code']), //商品编码
+                        'name' => app_to_string($g['goods_name']),  //商品名称
+                        'number' => app_to_int(round($g['goods_amount'], 2 )), //数量
+                        'spec' => !empty($g['goods_spec']) ? app_to_string($g['goods_spec']) : '',  //规格
+                        'price' => app_to_string($g['goods_purchasePrice']) //单价
+                    ];
+                    $total_weight += $g['goods_weight'];
+                }
+
+                $send_time = $bill->send_time;
+                if (empty($send_time) && (!empty($bill->pickup_start_time) && $bill->pickup_start_time != '0000-00-00 00:00:00')) {
+                    $send_time = date('m-d H:i', strtotime($bill->pickup_start_time));
+                    if (!empty($bill->pickup_end_time) && $bill->pickup_end_time != '0000-00-00 00:00:00') {
+                        $send_time .= ' ~ ' . date('m-d H:i', strtotime($bill->pickup_end_time));
+                    }
+                }
+
+                $bill_print_log = BillPrintLog::where('bill_no', $bill->bill_no)->where('device', $client_id)->where('device_site', 1)->first();
+                if (!$bill_print_log) {
+                    $bill_print_log = new BillPrintLog();
+                    $bill_print_log->uuid = Uuid::uuid();
+                    $bill_print_log->creator = 'system';
+                    $bill_print_log->createTime = date('Y-m-d h:i:s');
+                    $bill_print_log->bill_no = $bill->bill_no;
+                    $bill_print_log->device_site = 1;
+                    $bill_print_log->device = $client_id;
+                    $bill_print_log->save();
+                }
+
+                $barcode_data = ActivityCodePool::where('bill_no', $bill->bill_no)->first();
+                if (!$barcode_data) {
+                    $barcode_data = BillCodePool::where('bill_no', $bill->bill_no)->first();
+                }
+
+                $paid = $bill->pay_status == 1 ? $bill->bill_payable : 0;
+
+                $points_fee = $bill->bill_points_money;
+                $points_quantity = 0;
+
+                if ($bill->billType == 4) {
+                    $bill_pay = BillPay::where(['bill_no'=>$bill->bill_no, 'type'=>5])->first();
+                    if ($bill_pay) {
+                        $points_quantity = $bill_pay->deduct_amount;
+                    }
+                    $points_fee = 0;
+                }
+
+                $return_data[] = [
+                    'title' => $website_name, //订单标题
+                    'order_id' => app_to_string($bill->bill_no), //订单号
+                    'barcode' => $barcode_data ? app_to_string($barcode_data->barcode) : '', //提货券号
+                    'order_name' => isset($bill_type[$bill->billType]) ? $bill_type[$bill->billType] : '微电汇订单', //订单类型名
+                    'order_type' => isset($bill_type[$bill->billType]) ? 2 : 1, //订单类型：1、普通订单 2、外卖订单
+                    'shop_name' => app_to_string($mall_data->mallName), //店铺名称
+                    'shop_tel' => app_to_string($mall_data->phone), //店铺电话
+                    'shop_address' => app_to_string($mall_data->address),   //店铺地址
+                    'pay_name' => app_to_string($bill->payTypeName),    //支付方式名称
+                    'order_fee' => app_to_string($bill->bill_totalMoney), //订单总金额
+                    'total_fee' => app_to_string($bill->bill_totalPaid),  //商品总金额
+                    'user_paid_fee' => app_to_string($paid
+                        + $bill->bill_points_money
+                        + $bill->bill_balance_money
+                        + $bill->bill_coupon_money
+                    ),  //已付(合计)金额
+                    'paid_fee' => $paid, //主支付方式已支付
+                    'user_fee' => app_to_string($bill->bill_payable),   //应付(合计)金额
+                    'user_pay_fee' => app_to_string($bill->bill_payable - $paid),   //应收(合计)金额
+                    'points_fee' => app_to_string($points_fee),    //积分支付金额
+                    'points_quantity' => app_to_string(round($points_quantity ,2 )),    //积分支付数量(订单类型为积分兑换时有效)
+                    'balance_fee' => app_to_string($bill->bill_balance_money),    //优惠券抵扣金额
+                    'coupon_fee' => app_to_string($bill->bill_coupon_money),    //优惠券抵扣金额
+                    'discount_fee' => app_to_string($bill->bill_subtract_money),    //订单优惠金额
+                    'deliver_fee' => app_to_string($bill->deliver_feePaid), //运费
+                    'package_fee' => app_to_string($bill->additional_expenses), //餐盒费(只在外卖订单下显示)
+                    'total_weight' => app_to_string($total_weight), //订单商品总重量
+                    'create_time' => app_to_string(date('Y-m-d H:i', strtotime($bill->createTime))),  //下单时间
+                    'send_name' => app_to_string($bill->sendTypeName),  //配送方式名称
+                    'send_time' => app_to_string($send_time),   //配送或自提时间
+                    'deliver_name' => app_to_string($bill->deliver_name),   //收货人姓名
+                    'deliver_mobile' => app_to_string($bill->deliver_mobile),   //收货人联系方式
+                    'deliver_address' => app_to_string($bill->deliver_address), //收货人地址
+                    'code_url' => $domain_url,  //二维码地址
+                    'remark' => app_to_string($bill->remark),   //订单备注
+                    'print_time' => app_to_string(date('Y-m-d H:i')),    //打印时间
+                    'goods' => $goods_data  //订单商品数组
+                ];
+
+            }
+
+        }
+
+        return response()->json(['code'=>200, 'message'=>'ok', 'data'=>$return_data]);
+
+    }
+
+}

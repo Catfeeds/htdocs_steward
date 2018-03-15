@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Services\Mall;
+
+
+class MallEditService
+{
+    public function edit($args)
+    {
+        if (!isset($request_data['mall_name']) || empty($request_data['mall_name'])) {
+            return response()->json(['code' => 400, 'message' => '门店名称不能为空']);
+        }
+
+        if (!isset($request_data['mall_code']) || empty($request_data['mall_code'])) {
+            return response()->json(['code' => 400, 'message' => '门店号不能为空']);
+        }
+
+        if (!isset($request_data['phone']) || empty($request_data['phone'])) {
+            return response()->json(['code' => 400, 'message' => '门店电话不能为空']);
+        }
+
+        if (!isset($request_data['status']) || !in_array($request_data['status'], [0, 1])) {
+            return response()->json(['code' => 400, 'message' => '营业时间不能为空']);
+        }
+
+        if ($request_data['status'] == 1) {
+
+            $start_data = $request->input('start_arr');
+            $end_data = $request->input('end_arr');
+
+            if (empty($start_data) || empty($end_data)) {
+                return response()->json(['code' => 400, 'message' => '请选择营业时间']);
+            }
+            $time_data = array_combine($start_data, $end_data);
+            $time_str = '';
+
+            foreach ($time_data as $s_time => $e_time) {
+                $time_str .= $s_time . '-' . $e_time . ',';
+            }
+        }
+
+        if (!isset($request_data['latitude']) || empty($request_data['latitude'])) {
+            return response()->json(['code' => 400, 'message' => '纬度不能为空']);
+        }
+
+        if (!isset($request_data['longitude']) || empty($request_data['longitude'])) {
+            return response()->json(['code' => 400, 'message' => '经度不能为空']);
+        }
+
+        if (!isset($request_data['province_id']) || empty($request_data['province_id'])) {
+            return response()->json(['code' => 400, 'message' => '请选择门店地址']);
+        }
+
+        if (!isset($request_data['city_id']) || empty($request_data['city_id'])) {
+            return response()->json(['code' => 400, 'message' => '请选择门店地址']);
+        }
+
+        if (!isset($request_data['address']) || empty($request_data['address'])) {
+            return response()->json(['code' => 400, 'message' => '详细地址不能为空']);
+        }
+
+        if (!isset($request_data['mall_logo']) || empty($request_data['mall_logo'])) {
+            return response()->json(['code' => 400, 'message' => '门店logo不能为空']);
+        }
+
+        $province_obj = StRegion::find($request_data['province_id']);
+        $city_obj = StRegion::find($request_data['city_id']);
+        if (empty($province_obj) || empty($city_obj)) {
+            return response()->json(['code' => 400, 'message' => '地区数据未找到']);
+        }
+
+        if (isset($request_data['county_id']) && !empty($request_data['county_id'])) {
+            $county_obj = StRegion::find($request_data['county_id']);
+        }
+
+        if (isset($request_data['mall_id']) && !empty($request_data['mall_id'])) {
+            $st_obj = StMall::find($request_data['mall_id']);
+            if (!$st_obj) {
+                return response()->json(['code' => 404, 'message' => '门店信息不存在']);
+            }
+        } else {
+            $st_obj = new StMall();
+        }
+
+        $st_obj->creator = 'system';
+        $st_obj->name = $request_data['mall_name'];
+        $st_obj->code = $request_data['mall_code'];
+        $st_obj->province = $province_obj->name;
+        $st_obj->city = $city_obj->name;
+        $st_obj->county = !empty($county_obj->name) ? $county_obj->name : '';
+        $st_obj->province_id = $request_data['province_id'];
+        $st_obj->city_id = $request_data['city_id'];
+        $st_obj->county_id = $request_data['county_id'] ? $request_data['county_id'] : '';
+        $st_obj->address = $request_data['address'];
+        $st_obj->latitude = $request_data['latitude'];
+        $st_obj->longitude = $request_data['longitude'];
+        $st_obj->address = $request_data['address'];
+        $st_obj->phone = $request_data['phone'];
+        $st_obj->business_time_type = $request_data['status'];
+        $st_obj->business_time = $request_data['status'] == 1 ? rtrim($time_str) : '00::00-23::59';
+        $st_obj->status = $request_data['status'];
+        $st_obj->logo = $request_data['mall_logo'];
+        $st_obj->shar_rate = $request_data['shar_rate'] ? $request_data['shar_rate'] : '';
+        $st_obj->safety_stock = $request_data['safety_stock'] ? $request_data['safety_stock'] : '';
+        $st_obj->save();
+
+        return ['code' => 200, 'message' => '操作成功'];
+    }
+}
